@@ -1,0 +1,45 @@
+html, body, #viewDiv, #myCanvasDivHeatmap {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    width: 100%;
+}
+.editArea-container {
+    background: #fff;
+    font-family: "Avenir Next W00", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height: 1.5em;
+    overflow: auto;
+    padding: 12px 15px;
+    width: 300px;
+}
+
+.edit-button:hover,
+.edit-button:focus {
+    background-color: #e4e4e4;
+    cursor: pointer;
+}
+
+.inputInfo {
+    font-size: 12px;
+    height: 32px;
+    margin-bottom: 6px;
+    padding: 0 6px;
+    width: 100%;
+}
+
+.list-heading {
+    font-weight: normal;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #323232;
+}
+
+.edit-button {
+    font-size: 14px;
+    height: 32px;
+    margin-top: 10px;
+    width: 100%;
+    background-color: transparent;
+    border: 1px solid #0079c1;
+    color: #0079c1;
+}

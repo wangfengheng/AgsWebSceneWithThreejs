@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>threejs创建三维饼图</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      font-family: Monospace;
+      background-color: #f0f0f0;
+      margin: 0px;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 引入three.js库 -->
+  <script src="../libs/threejs/three104.min.js"></script>
+  <!-- 引入three.js提供的鼠标、方向键与场景交互的控件 -->
+  <script src="../libs/threejs/controls/OrbitControls.js"></script>
+
+  <script>
+    //创建一个场景对象
+    var scene = new THREE.Scene();
+    addSceneHelperObject(scene);
+    // 创建三维饼图 start
+    var geometry4cylinder;
+    var material;
+    var mesh4cylinder;
+    geometry4cylinder = new THREE.CylinderBufferGeometry(10, 10,
+      10, 32, 32, false, 0, Math.PI / 4);//圆柱
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+    mesh4cylinder = new THREE.Mesh(geometry4cylinder, material);
+    scene.add(mesh4cylinder);
+ 
+
+    geometry4cylinder = new THREE.CylinderBufferGeometry(10, 10,
+      10, 32, 32, false, Math.PI * 1 / 4, Math.PI / 4);//圆柱
+    material = new THREE.MeshBasicMaterial({ color: 0xff00, side: THREE.DoubleSide });
+    mesh4cylinder = new THREE.Mesh(geometry4cylinder, material);
+    scene.add(mesh4cylinder);
+
+    geometry4cylinder = new THREE.CylinderBufferGeometry(10, 10,
+      10, 32, 32, false, Math.PI * 2 / 4, Math.PI / 4);//圆柱
+    material = new THREE.MeshBasicMaterial({ color: 0x00ff, side: THREE.DoubleSide });
+    mesh4cylinder = new THREE.Mesh(geometry4cylinder, material);
+    scene.add(mesh4cylinder);
+
+    geometry4cylinder = new THREE.CylinderBufferGeometry(10, 10,
+      10, 32, 32, false, Math.PI * 3 / 4, Math.PI / 4);//圆柱
+    material = new THREE.MeshBasicMaterial({ color: 0xffff, side: THREE.DoubleSide });
+    mesh4cylinder = new THREE.Mesh(geometry4cylinder, material);
+    scene.add(mesh4cylinder);
+
+
+    geometry4cylinder = new THREE.CylinderBufferGeometry(10, 10,
+      10, 32, 32, false, Math.PI * 4 / 4, Math.PI / 4);//圆柱
+    material = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+    mesh4cylinder = new THREE.Mesh(geometry4cylinder, material);
+    scene.add(mesh4cylinder);
+
+
+    geometry4cylinder = new THREE.CylinderBufferGeometry(10, 10,
+      10, 32, 32, false, Math.PI *5 / 4, Math.PI / 4);//圆柱
+    material = new THREE.MeshBasicMaterial({ color: 0xff00, side: THREE.DoubleSide });
+    mesh4cylinder = new THREE.Mesh(geometry4cylinder, material);
+    scene.add(mesh4cylinder);
+
+    geometry4cylinder = new THREE.CylinderBufferGeometry(10, 10,
+      10, 32, 32, false, Math.PI * 6 / 4, Math.PI / 4);//圆柱
+    material = new THREE.MeshBasicMaterial({ color: 0x00ff, side: THREE.DoubleSide });
+    mesh4cylinder = new THREE.Mesh(geometry4cylinder, material);
+    scene.add(mesh4cylinder);
+
+    geometry4cylinder = new THREE.CylinderBufferGeometry(10, 10,
+      10, 32, 32, false, Math.PI * 7 / 4, Math.PI / 4);//圆柱
+    material = new THREE.MeshBasicMaterial({ color: 0x00ff, side: THREE.DoubleSide });
+    mesh4cylinder = new THREE.Mesh(geometry4cylinder, material);
+    scene.add(mesh4cylinder);
+
+    // 创建三维饼图 end
+
+
+
+    // 为场景添加整体环境光。如果场景中没有光就如黑夜，人的眼什么也看不见。
+    // 如果材质是MeshBasicMaterial，则不受光照影响，没有设置光源，也能看见模型；
+    // 如果材质是MeshLambertMaterial，则受光照影响，没有设置光源，就看不到模型了。
+    scene.add(new THREE.AmbientLight(0x808080));// 环境光 颜色：灰色
+    var camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+    camera.position.x = 90;
+    camera.position.y = 90;
+    camera.position.z = 90;
+    //渲染器对象,通过渲染器对象进行渲染操作！
+    var renderer = new THREE.WebGLRenderer();//WebGL渲染器
+    renderer.render(scene, camera);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    myRenderFunc();
+
+    function myRenderFunc() {
+      renderer.render(scene, camera);
+      requestAnimationFrame(myRenderFunc);
+    }
+    var controls = new THREE.OrbitControls(camera);
+    controls.addEventListener('change', myRenderFunc);
+
+
+
+
+
+
+
+
+    function addSceneHelperObject(sceneThreejs) {
+      sceneThreejs.add(new THREE.AxesHelper(100));//辅助的 坐标轴
+      var fontName;
+      var fontNameLoader = new THREE.FontLoader().load('../assets/font/helvetiker_bold.typeface.json', function (font) {
+        fontName = font;
+        addTextToSceneThreejs('x', 0xff0000, { x: 60, y: 0, z: 0, rotateX: 0, rotateY: 0, rotateZ: 0 });
+        addTextToSceneThreejs('y', 0x00ff00, { x: 0, y: 30, z: 0, rotateX: 0, rotateY: 0, rotateZ: 0 });
+        addTextToSceneThreejs('z', 0x0000ff, { x: 0, y: 0, z: 60, rotateX: 0, rotateY: Math.PI / 2, rotateZ: 0 });
+      });
+
+      function addTextToSceneThreejs(text, color, position) {
+        var textGeometry = new THREE.TextGeometry(text, {
+          size: 10, //字号大小，一般为大写字母的高度
+          height: 0.1, //文字的厚度
+          weight: 'normal', //值为'normal'或'bold'，表示是否加粗
+          font: fontName, //字体，默认是'helvetiker'，需对应引用的字体文件
+          style: 'normal', //值为'normal'或'italics'，表示是否斜体
+          bevelThickness: 0.1, //倒角厚度
+          bevelSize: 0.1, //倒角宽度
+          curveSegments: 3,//弧线分段数，使得文字的曲线更加光滑
+          bevelEnabled: true, //布尔值，是否使用倒角，意为在边缘处斜切
+        });
+        // textGeometry.center();
+        var material = new THREE.MeshBasicMaterial({
+          color: color,
+          shininess: 30,
+          shading: THREE.FlatShading
+        });
+        var meshObj = new THREE.Mesh(textGeometry, material);
+        meshObj.position.x = position.x;
+        meshObj.position.y = position.y;
+        meshObj.position.z = position.z;
+        meshObj.rotateX(position.rotateX);
+        meshObj.rotateY(position.rotateY);
+        meshObj.rotateZ(position.rotateZ);
+        sceneThreejs.add(meshObj);
+      }
+    }
+
+  </script>
+
+</body>
+
+</html>

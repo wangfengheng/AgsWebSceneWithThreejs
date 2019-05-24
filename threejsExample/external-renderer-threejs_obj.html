@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>加载一个obj模型,并平滑运动</title>
+
+  <link rel="stylesheet" href="http://esrichina3d.arcgisonline.cn/jsapi/4.11/esri/themes/dark-blue/main.css" />
+  <!-- 引入three.js库 -->
+  <script src="../libs/threejs/three104.min.js"></script>
+  <!-- 引入three.js的obj模型加载库 -->
+  <script src="../libs/threejs/loaders/OBJLoader.js"></script>
+  <!-- 引入arcgis api库 -->
+  <script src="http://esrichina3d.arcgisonline.cn/jsapi/4.11/init.js"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    /* 去掉地图点击蓝色边框 */
+    .esri-view .esri-view-surface--inset-outline:focus::after {
+      outline: auto 0px Highlight !important;
+      outline: auto 0px -webkit-focus-ring-color !important;
+    }
+  </style>
+
+  <!-- Our application -->
+  <script>
+    require([
+      "esri/WebScene",
+      "esri/views/SceneView",
+      "esri/layers/WebTileLayer",
+      "esri/Camera",
+      "esri/views/3d/externalRenderers",
+      "esri/geometry/SpatialReference",
+      "esri/request",
+      "esri/core/urlUtils"
+    ], function (
+      WebScene,
+      SceneView,
+      WebTileLayer,
+      Camera,
+      externalRenderers,
+      SpatialReference,
+      esriRequest,
+      urlUtils
+    ) {
+        // 创建一副空的地图
+        var map = new WebScene({});
+        // 添加底图
+        var basemapLayer = new WebTileLayer({
+          //捷泰 底图
+          urlTemplate: "http://map.geoq.cn/arcgis/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{level}/{row}/{col}"
+        });
+        map.add(basemapLayer);
+
+        // 创建一个三维视图
+        var view = new SceneView({
+          container: "viewDiv",
+          map: map,
+          viewingMode: "global",
+          camera: {
+            position: {
+              x: 12304794.78704807,
+              y: 3321811.623938639,
+              z: 25512547.999999993,
+              spatialReference: { wkid: 102100 }
+            },
+            heading: 359.82521701741024,
+            tilt: 0.09999162151585612
+          }
+        });
+
+        // Disable lighting based on the current camera position.
+        // We want to display the lighting according to the current time of day.
+        // view.environment.lighting.cameraTrackingEnabled = false;
+
+        // Create our custom external renderer
+        var myFirstExternalRenderer = {
+          renderer: null, // three.js renderer
+          camera: null, // three.js camera
+          scene: null, // three.js scene
+
+          ambient: null, // three.js ambient light source
+          sun: null, // three.js sun light source
+
+          drone: null, // drone model
+          droneScale: 10, // scale for the drone model
+          curve4fly: null,// 飞行路线
+          positionCount: 0,// 飞行计数器
+          // modelMoveSpeed: 0.0002,// 飞行速度
+          modelMoveSpeed: 0.002,// 飞行速度
+          droneMaterial: new THREE.MeshLambertMaterial({ color: 0xe03110 }), // material for the drone model
+          /**
+           * Setup function, called once by the ArcGIS JS API.
+           */
+          setup: function (context) {
+            // initialize the three.js renderer
+            //////////////////////////////////////////////////////////////////////////////////////
+            this.renderer = new THREE.WebGLRenderer({
+              context: context.gl,
+              premultipliedAlpha: false
+            });
+            this.renderer.setPixelRatio(window.devicePixelRatio);
+            this.renderer.setViewport(0, 0, view.width, view.height);
+
+            // prevent three.js from clearing the buffers provided by the ArcGIS JS API.
+            this.renderer.autoClearDepth = false;
+            this.renderer.autoClearStencil = false;
+            this.renderer.autoClearColor = false;
+
+            // this.renderer.autoClearDepth = true;
+            // this.renderer.autoClearStencil = false;
+            // this.renderer.autoClearColor = true;
+
+            // The ArcGIS JS API renders to custom offscreen buffers, and not to the default framebuffers.
+            // We have to inject this bit of code into the three.js runtime in order for it to bind those
+            // buffers instead of the default ones.
+            var originalSetRenderTarget = this.renderer.setRenderTarget.bind(
+              this.renderer
+            );
+            this.renderer.setRenderTarget = function (target) {
+              originalSetRenderTarget(target);
+              if (target == null) {
+                context.bindRenderTarget();
+              }
+            };
+
+            // setup the three.js scene
+            ///////////////////////////////////////////////////////////////////////////////////////
+
+            this.scene = new THREE.Scene();
+            // this.scene.add(new THREE.AxesHelper(9000000));//添加辅助坐标轴
+
+            // setup the camera
+            this.camera = new THREE.PerspectiveCamera();
+
+            // setup scene lighting
+            this.ambient = new THREE.AmbientLight(0xffffff, 0.5);
+            this.scene.add(this.ambient);
+            this.sun = new THREE.DirectionalLight(0xffffff, 0.5);
+            this.scene.add(this.sun);
+
+            // load drone mesh
+            // var droneMeshUrl = "../assets/models/iss.obj";
+            // var droneMeshUrl = "../assets/models/PropPlane.obj";
+            var droneMeshUrl = "../assets/models/drone.obj";
+            // var loader = new THREE.OBJLoader(THREE.DefaultLoadingManager);
+            var loader = new THREE.OBJLoader();
+            loader.load(
+              droneMeshUrl,
+              function (object3d) {
+                console.log("drone model loaded.");
+                this.drone = object3d;
+
+                // apply drone material to all nodes in the geometry
+                this.drone.traverse(
+                  function (child) {
+                    if (child instanceof THREE.Mesh) {
+                      child.material = this.droneMaterial;
+                    }
+                  }.bind(this)
+                );
+
+                // set the specified scale for the model
+                this.drone.scale.set(this.droneScale, this.droneScale, this.droneScale);
+
+                // add the model
+                this.scene.add(this.drone);
+              }.bind(this),
+              undefined,
+              function (error) {
+                console.error("Error loading drone mesh. ", error);
+              }
+            );
+
+            // 飞行路线 start
+            var beijingAirport = [116.5968704223633, 40.15447407601198, 100000];// 北京首都国际机场
+            var transform = new THREE.Matrix4();
+            transform.fromArray(externalRenderers.renderCoordinateTransformAt(view, beijingAirport, SpatialReference.WGS84, new Array(16)));
+            var lineStartVector3 = new THREE.Vector3(transform.elements[12], transform.elements[13], transform.elements[14]);
+
+            var shanghaiAirport = [121.34113, 31.19590, 300000];// 上海虹桥机场
+            var transform = new THREE.Matrix4();
+            transform.fromArray(externalRenderers.renderCoordinateTransformAt(view, shanghaiAirport, SpatialReference.WGS84, new Array(16)));
+            var lineMiddleVector3 = new THREE.Vector3(transform.elements[12], transform.elements[13], transform.elements[14]);
+
+            var guangzhouAirport = [113.30256, 23.38653, 100000]; // 广州白云机场
+            var transform = new THREE.Matrix4();
+            transform.fromArray(externalRenderers.renderCoordinateTransformAt(view, guangzhouAirport, SpatialReference.WGS84, new Array(16)));
+            var lineEndVector3 = new THREE.Vector3(transform.elements[12], transform.elements[13], transform.elements[14]);
+            this.curve4fly = new THREE.CatmullRomCurve3([//取代的是CatmullRomCurve3
+              new THREE.Vector3(beijingAirport[0], beijingAirport[1], beijingAirport[2]),
+              new THREE.Vector3(shanghaiAirport[0], shanghaiAirport[1], shanghaiAirport[2]),
+              new THREE.Vector3(guangzhouAirport[0], guangzhouAirport[1], guangzhouAirport[2]),
+            ]);
+            this.curve4fly2 = new THREE.CatmullRomCurve3([//取代的是CatmullRomCurve3
+              lineStartVector3, lineMiddleVector3, lineEndVector3
+              // lineStartVector3, lineEndVector3
+            ]);
+            var geometry = new THREE.Geometry();
+            //geometry.vertices = curve.getPoints(60);//点密度太稀！！！
+            geometry.vertices = this.curve4fly2.getPoints(600);
+            var material = new THREE.LineDashedMaterial({ linewidth: 10, color: 0xffff00 });
+            //		var material = new THREE.LineMaterial({color : 0xff0000});//THREE.LineMaterial is not a constructor
+            var line = new THREE.Line(geometry, material);
+            this.scene.add(line);
+            // 飞行路线 end
+
+            // cleanup after ourselfs
+            context.resetWebGLState();
+          },
+
+          render: function (context) {
+            // update camera parameters
+            ///////////////////////////////////////////////////////////////////////////////////
+            var cam = context.camera;
+
+            this.camera.position.set(cam.eye[0], cam.eye[1], cam.eye[2]);
+            this.camera.up.set(cam.up[0], cam.up[1], cam.up[2]);
+            this.camera.lookAt(
+              new THREE.Vector3(cam.center[0], cam.center[1], cam.center[2])
+            );
+
+            // Projection matrix can be copied directly
+            this.camera.projectionMatrix.fromArray(cam.projectionMatrix);
+
+            // 更新obj模型的位置 start
+            ///////////////////////////////////////////////////////////////////////////////////
+            if (this.drone) {
+              var dronePos = this.computeDronePosition();
+              var geoData = dronePos;
+              // 这种方式也可以把经纬度坐标转换成three.js的坐标 start
+              var renderPos = [0, 0, 0];
+              externalRenderers.toRenderCoordinates(
+                view,
+                dronePos,
+                0,
+                SpatialReference.WGS84,
+                renderPos,
+                0,
+                1
+              );
+              this.drone.position.set(renderPos[0], renderPos[1], renderPos[2]);
+              // 这种方式也可以把经纬度坐标转换成three.js的坐标 end
+              this.drone.rotation.z = -Math.asin(Math.cos((geoData[1] / 180) * Math.PI) * Math.cos((geoData[0] / 180) * Math.PI));
+              this.drone.rotation.x = Math.atan(Math.tan((geoData[1] / 180) * Math.PI) / Math.sin((geoData[0] / 180) * Math.PI));
+            }
+            // 更新obj模型的位置 end
+
+            // update lighting
+            /////////////////////////////////////////////////////////////////////////////////////////////////////
+            // view.environment.lighting.date = Date.now();
+
+            var l = context.sunLight;
+            this.sun.position.set(
+              l.direction[0],
+              l.direction[1],
+              l.direction[2]
+            );
+            this.sun.intensity = l.diffuse.intensity;
+            this.sun.color = new THREE.Color(
+              l.diffuse.color[0],
+              l.diffuse.color[1],
+              l.diffuse.color[2]
+            );
+
+            this.ambient.intensity = l.ambient.intensity;
+            this.ambient.color = new THREE.Color(
+              l.ambient.color[0],
+              l.ambient.color[1],
+              l.ambient.color[2]
+            );
+
+            // draw the scene
+            /////////////////////////////////////////////////////////////////////////////////////////////////////
+            this.renderer.state.reset();
+            this.renderer.render(this.scene, this.camera);
+
+            // as we want to smoothly animate the drone movement, immediately request a re-render
+            externalRenderers.requestRender(view);
+
+            // cleanup
+            context.resetWebGLState();
+          },
+
+          /**
+           * Computes an estimate for the position of the drone based on the current time.
+           */
+          computeDronePosition: function () {
+            var newPos;
+            var xTemp, yTemp, zTemp;
+            if (this.positionCount < 1) {
+              xTemp = this.curve4fly.getPointAt(this.positionCount).x;
+              yTemp = this.curve4fly.getPointAt(this.positionCount).y;
+              zTemp = this.curve4fly.getPointAt(this.positionCount).z;
+              var newPos = [xTemp, yTemp, zTemp
+                // 116.3, 39.9, 1000
+                // 45, 10, 1000
+                // 45, 45, -4500 * 1000
+                // 45, 9.9, 0
+              ];
+              this.positionCount += this.modelMoveSpeed;
+            } else {
+              this.positionCount = 0;
+            }
+            return newPos;
+          },
+        };
+
+        // register the external renderer
+        externalRenderers.add(view, myFirstExternalRenderer);
+      });
+  </script>
+</head>
+
+<body>
+  <div id="viewDiv"></div>
+</body>
+
+</html>

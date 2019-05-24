@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>热门线路</title>
+    <style>
+        html,
+        body,
+        #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        /* 去掉地图点击蓝色边框 */
+        .esri-view .esri-view-surface--inset-outline:focus::after {
+            outline: auto 0px Highlight !important;
+            outline: auto 0px -webkit-focus-ring-color !important;
+        }
+    </style>
+    <!--样式 start-->
+    <link rel="stylesheet" href="http://esrichina3d.arcgisonline.cn/jsapi/4.11/esri/themes/dark-blue/main.css" />
+    <!--样式 end-->
+    <!--第三方插件 start-->
+    <script src="libs/jquery/jquery-1.11.3.min.js"></script>
+    <!--three.js要在js api加载前加载-->
+    <script src="libs/threejs/three.js"></script>
+    <script src="libs/threejs/GPUParticleSystem.js"></script>
+    <!--第三方插件 end-->
+    <!--数据配置 start-->
+    <script src="config/dataConfig.js" type="text/javascript"></script>
+    <!--数据配置 end-->
+
+    <!--js api start-->
+    <script src="config/dojoConfig.js" type="text/javascript"></script>
+    <script src="http://esrichina3d.arcgisonline.cn/jsapi/4.11/init.js"></script>
+    <!--js api end-->
+
+    <!--主程序入口 start-->
+    <script src="js/doors/door_hotTrafficLines.js" type="text/javascript"></script>
+    <!--主程序入口 end-->
+</head>
+
+<body>
+    <div id="viewDiv" style="position: absolute;z-index: 1;float:left;"></div>
+</body>
+
+</html>

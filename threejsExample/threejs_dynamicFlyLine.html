@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>three.js - gpu particle system</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+</head>
+
+<body>
+	<div id="container"></div>
+	<!-- 引入three.js库 -->
+	<script src="../libs/threejs/three104.min.js"></script>
+	<!-- 引入three.js提供的鼠标、方向键与场景交互的控件 -->
+	<script src="../libs/threejs/controls/OrbitControls.js"></script>
+	<script src="../libs/threejs/GPUParticleSystem.js"></script>
+	<script>
+		var camera, tick = 0,
+			scene, renderer, clock = new THREE.Clock(),
+			controls, container,
+			options, spawnerOptions, particleSystem,
+			options2, spawnerOptions2, particleSystem2;
+
+		init();
+		animate();
+
+		function init() {
+			container = document.getElementById('container');
+
+			camera = new THREE.PerspectiveCamera(28, window.innerWidth / window.innerHeight, 1, 10000);
+			camera.position.z = 100;
+
+			scene = new THREE.Scene();
+			scene.add(new THREE.AxesHelper(1000));
+
+			//曲线 start
+			// curve = new THREE.SplineCurve3([
+			curve = new THREE.CatmullRomCurve3([//取代的是CatmullRomCurve3
+				new THREE.Vector3(-10, 10, 10),
+				new THREE.Vector3(-5, 5, 5),
+				new THREE.Vector3(0, 0, 0),
+				new THREE.Vector3(5, -5, 5),
+				new THREE.Vector3(10, 0, 10)
+			]);
+
+			var geometry = new THREE.Geometry();
+			geometry.vertices = curve.getPoints(600);
+			var material = new THREE.LineBasicMaterial({ linewidth: 15, color: get0xColor('red') });
+			var line = new THREE.Line(geometry, material);
+			scene.add(line);
+			//曲线2 start
+			curve2 = new THREE.CatmullRomCurve3([
+				new THREE.Vector3(-20, 10, 10),
+				new THREE.Vector3(-25, 5, 5),
+				new THREE.Vector3(-20, -20, -20),
+				new THREE.Vector3(-5, -15, -5),
+				new THREE.Vector3(-10, -10, -10)
+			]);
+
+			var geometry2 = new THREE.Geometry();
+			geometry2.vertices = curve2.getPoints(600);
+			var material2 = new THREE.LineBasicMaterial({ linewidth: 15, color: get0xColor('blue') });
+			//		var material = new THREE.LineMaterial({color : 0xff0000});//THREE.LineMaterial is not a constructor
+
+			var line2 = new THREE.Line(geometry2, material2);
+			scene.add(line2);
+
+			// The GPU Particle system extends THREE.Object3D, and so you can use it
+			// as you would any other scene graph component.	Particle positions will be
+			// relative to the position of the particle system, but you will probably only need one
+			// system for your whole scene
+
+			particleSystem = new THREE.GPUParticleSystem({
+				maxParticles: 250000
+			});
+			particleSystem2 = new THREE.GPUParticleSystem({
+				maxParticles: 250000
+			});
+
+			scene.add(particleSystem);
+			scene.add(particleSystem2);
+
+			// options passed during each spawned
+
+			options = {
+				position: new THREE.Vector3(),
+				//position: new THREE.Vector3(0,0,0),
+				positionRandomness: .3,
+				velocity: new THREE.Vector3(),
+				velocityRandomness: .5,
+				//color: 0xaa88ff,
+				color: get0xColor('green'),
+				colorRandomness: .2,
+				//turbulence: .5,//震动
+				turbulence: .01,
+				lifetime: 2,
+				size: 5,
+				sizeRandomness: 1
+			};
+			options2 = {
+				position: new THREE.Vector3(),
+				//position: new THREE.Vector3(0,0,0),
+				positionRandomness: .3,
+				velocity: new THREE.Vector3(),
+				velocityRandomness: .5,
+				//color: 0xaa88ff,
+				color: get0xColor('red'),
+				colorRandomness: .2,
+				//turbulence: .5,//震动
+				turbulence: .01,
+				lifetime: 2,
+				size: 5,
+				sizeRandomness: 1
+			};
+
+			spawnerOptions = {
+				spawnRate: 15000,
+				horizontalSpeed: 1.5,
+				verticalSpeed: 1.33,
+				timeScale: 1
+			};
+			spawnerOptions2 = {
+				spawnRate: 15000,
+				horizontalSpeed: 1.5,
+				verticalSpeed: 1.33,
+				timeScale: 1
+			};
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			container.appendChild(renderer.domElement);
+
+			window.addEventListener('resize', onWindowResize, false);
+		}
+
+		function onWindowResize() {
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		}
+
+		var pos = 0;
+		var pos2 = 0;
+		function animate() {
+			requestAnimationFrame(animate);
+			var delta = clock.getDelta() * spawnerOptions.timeScale;
+			tick += delta;
+			if (tick < 0) tick = 0;
+			if (pos < 1) {
+				options.position.x = curve.getPointAt(pos).x;
+				options.position.y = curve.getPointAt(pos).y;
+				options.position.z = curve.getPointAt(pos).z;
+				pos += 0.003;
+			} else {
+				pos = 0;
+			}
+			if (pos2 < 1) {
+				options2.position.x = curve2.getPointAt(pos2).x;
+				options2.position.y = curve2.getPointAt(pos2).y;
+				options2.position.z = curve2.getPointAt(pos2).z;
+				pos2 += 0.01;
+			} else {
+				pos2 = 0;
+			}
+			for (var x = 0; x < spawnerOptions.spawnRate * delta; x++) {
+				// Yep, that's really it.	Spawning particles is super cheap, and once you spawn them, the rest of
+				// their lifecycle is handled entirely on the GPU, driven by a time uniform updated below
+				particleSystem.spawnParticle(options);
+				particleSystem2.spawnParticle(options2);
+			}
+			particleSystem.update(tick);
+			particleSystem2.update(tick);
+			render();
+		}
+		var controls = new THREE.OrbitControls(camera);
+		controls.addEventListener('change', render);
+
+		function render() {
+			renderer.render(scene, camera);
+		}
+		function get0xColor(name, flag) {
+			var color = 0xffffff;
+			if (name == "绿色" || name == "green") {
+				color = 0x00FF00;
+			} else if (name == "黄色" || name == "yellow") {
+				color = 0xffff00;
+			} else if (name == "蓝色" || name == "blue") {
+				color = 0x0040ff;
+			} else if (name == "浅蓝色" || name == "lightblue") {
+				color = 0x00ffff;
+				if (!flag) {
+					color = '#00ffff';
+				}
+			} else if (name == "深蓝色mapv" || name == "darkblue_mapv") {
+				color = 0x3943F9;
+				if (!flag) {
+					color = '#3943F9';
+				}
+			} else if (name == "红色" || name == "red") {
+				color = 0xff0000;
+			} else if (name == "白色" || name == "white") {
+				color = 0xffffff;
+			} else if (name == "白色2" || name == "white2") {
+				color = 0xF6F9EE;
+			} else if (name == "白色3" || name == "white3") {
+				color = 0xDBE1D4;
+			} else if (name == "白色4" || name == "white4") {
+				color = 0xCBD3C4;
+			} else if (name == "白色5" || name == "white5") {
+				color = 0xBAC4B5;
+			} else if (name == "浅灰色" || name == "lightgray") {
+				color = 0x333333;
+			} else if (name == "灰色" || name == "gray") {
+				color = 0x808080;
+			} else if (name == "银色" || name == "") {
+				color = 0xC0C0C0;
+			} else if (name == "紫色" || name == "") {
+				color = 0x800080;
+			}
+			return color;
+		}
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,98 @@
+#sliderContainer {
+    display: none;
+    /*display: flex;*/
+    z-index: 3;
+    position: absolute;
+    left: 0px;
+    bottom: 20px;
+    /*width: 100%;*/
+    width: 50%;
+    margin-left: 25%;
+
+    flex: 0 0 80px;
+    order: 2;
+
+    flex-flow: row;
+
+    padding: 0 12px;
+
+}
+
+#sliderValue {
+    /*flex: 0 0 100px;*/
+    flex: 0 0 200px;
+    order: 1;
+
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+
+    font-size: 300%;
+}
+
+#sliderInnerContainer {
+    flex: 1 1 auto;
+    order: 2;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 20px;
+}
+
+#sliderLabels {
+    flex: 1 1 auto;
+    order: 1;
+
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+#rangeWrapper {
+    flex: 1 1 auto;
+    order: 2;
+
+    position: relative;
+    padding: 0 20px;
+}
+
+#slider {
+    width: 100%;
+}
+
+/**
+* Play/Stop toggle button
+*/
+
+#playButton {
+    flex: 0 0 100px;
+    order: 3;
+
+    margin: 20px 0;
+}
+
+.toggle-button {
+    display: flex;
+}
+
+.toggle-button.toggled .toggle-button-icon {
+    color: #CC1B1B;
+}
+
+.toggle-button .toggle-button-icon {
+    color: #1BCC1B;
+}
+
+.toggle-button> :nth-child(2) {
+    display: none;
+}
+
+.toggle-button.toggled> :nth-child(1) {
+    display: none;
+}
+
+.toggle-button.toggled> :nth-child(2) {
+    display: block;
+}
